@@ -1,8 +1,58 @@
-# Dashboard MECOBE - Versão Otimizada
+# 🏥 Dashboard MECOBE Premium v2.1
 
-## 📋 Resumo das Melhorias
+## 🚀 Sistema Avançado de Matriz de Segmentação Médica
 
-Esta versão otimizada do dashboard médico MECOBE implementa as melhores práticas de desenvolvimento web moderno, com foco em performance, acessibilidade, manutenibilidade e experiência do usuário.
+Dashboard profissional para análise e segmentação de médicos com **integração completa Excel** e **sistema de filtros avançados**. Desenvolvido com as melhores práticas de acessibilidade, performance e experiência do usuário.
+
+### ✨ **Principais Funcionalidades**
+
+- 📊 **Integração Excel Automática** - Carrega dados diretamente da planilha
+- 🔍 **Sistema de Filtros Avançados** - 8 tipos diferentes de filtros
+- 📱 **Design Responsivo** - Funciona perfeitamente em todos os dispositivos  
+- ♿ **Totalmente Acessível** - WCAG 2.1 AA compliant
+- 🖨️ **Funcionalidade de Impressão** - Layout otimizado para impressão
+- ⚡ **Performance Otimizada** - Carregamento rápido e interações fluidas
+
+## 📊 **Integração Excel - NOVO!**
+
+### 🔄 **Carregamento Automático de Dados**
+- **Fonte:** `Segmentação Karine Lopes 2.xlsx`
+- **Detecção automática** de colunas (nome, especialidade, volume, afinidade)
+- **Processamento inteligente** com mapeamento automático
+- **Fallback seguro** para dados de exemplo
+- **Recarregamento dinâmico** com botão de refresh
+
+### 🎯 **Mapeamento Inteligente**
+- **Nomes:** Identifica colunas como "nome", "medico", "doutor"
+- **Especialidades:** Reconhece "especialidade", "area", "especialização"  
+- **Volume:** Detecta "volume", "consultas", "atendimentos"
+- **Afinidade:** Mapeia "afinidade", "relacionamento", "engajamento"
+
+### 📈 **Processamento de Dados**
+- **Segmentação automática** baseada em volume/afinidade
+- **Classificação de prioridades** (estratégico, alta, oportunidades)
+- **Validação e limpeza** de dados inconsistentes
+- **KPIs calculados** em tempo real
+
+## 🔍 **Sistema de Filtros Avançados - NOVO!**
+
+### 🎛️ **8 Tipos de Filtros Disponíveis:**
+
+1. **🔍 Busca por Nome** - Campo de busca em tempo real
+2. **📊 Segmentos** - Checkboxes para Blindar, Incentivar, Avaliar, Conquistar
+3. **🏥 Especialidades** - Dropdown com 24+ especialidades médicas
+4. **📈 Volume** - Slider para filtrar por volume mínimo
+5. **❤️ Afinidade** - Slider para filtrar por afinidade mínima
+6. **⚡ Filtros Rápidos** - Alta Prioridade, Novas Oportunidades, Estratégicos
+7. **🔄 Combinação** - Todos os filtros funcionam em conjunto
+8. **🧹 Limpeza** - Botão para resetar todos os filtros
+
+### ✨ **Funcionalidades do Sistema de Filtros:**
+- **Filtragem em tempo real** com resultados instantâneos
+- **Contador de filtros ativos** no cabeçalho
+- **Resumo de resultados** com contagem
+- **Status dos dados** (carregando, sucesso, erro)
+- **Interface colapsável** para economizar espaço
 
 ## 🎯 Melhorias Implementadas
 
