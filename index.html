@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Dashboard MECOBE - Sistema de Matriz de Segmentação para análise médica executiva">
+  <meta name="keywords" content="MECOBE, dashboard, matriz segmentação, médicos, saúde">
+  <meta name="author" content="Sistema MECOBE">
+  
+  <!-- Preconnect for performance -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAA7EAAAOxAGVKw4bAAAA3klEQVRYhe2WQQ6CQAyFXyEewI3ewAPgAXABLsAN4AZwA1yAC3ABLsANcAFcABfABbgAF8AFuABcABfABbgAXAAXwAVwAVwAF8AF8H9egJvZOefcOefcOefcOefcOefcOefcOefcOefcOefcOefcOefcOefcOefcOefcOefcOefcOefcOefcOefcOefcOefcOefcOefcOefcOefcOefcOefcOefcOefcOefcOefcOefcOefcOefcOefcOefcOefcOefcOefcOefcOefcOefcOefcOefcOefcOefcOefcOefcOefcOefcOefcOefcOefcOefcOefcOefcOefcOefcOefcOef">
+  
+  <title>Médicos - MECOBE | Dashboard de Matriz de Segmentação</title>
+  
+  <!-- External Stylesheets -->
+  <link rel="stylesheet" href="styles.css">
+  
+  <!-- Critical CSS for above-the-fold content -->
+  <style>
+    /* Critical styles for initial render */
+    body { 
+      background: #0B0D0F; 
+      font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; 
+      margin: 0;
+      padding: 0;
+    }
+    .dashboard-container { 
+      max-width: 1320px; 
+      margin: 28px auto 48px; 
+      padding: 0 16px; 
+    }
+    .loading-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #0B0D0F;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      transition: opacity 0.3s ease;
+    }
+    .loading-screen.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Skip link for accessibility -->
+  <a href="#main-content" class="skip-link">Pular para o conteúdo principal</a>
+  
+  <!-- Loading screen -->
+  <div class="loading-screen" id="loading-screen" aria-hidden="true">
+    <div class="loading-spinner" role="status" aria-label="Carregando dashboard"></div>
+  </div>
+
+  <!-- Main container with proper semantic structure -->
+  <div class="dashboard-container">
+    
+    <!-- Header section -->
+    <header class="dashboard-header" role="banner">
+      <div class="brand">
+        <img 
+          class="brand-logo" 
+          src="data:image/png;base64,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" 
+          alt="Logo MECOBE - Sistema de Matriz de Segmentação Médica"
+          width="132"
+          height="52"
+        />
+        <div class="brand-content">
+          <h1 class="brand-title">Médicos - MECOBE</h1>
+          <p class="brand-subtitle">Matriz de Segmentação • Visão Executiva</p>
+        </div>
+      </div>
+      
+      <nav class="controls" role="navigation" aria-label="Controles do dashboard">
+        <div class="legend" role="group" aria-label="Legenda de cores">
+          <span class="legend-item">
+            <span class="legend-dot" style="background: #0B6E99;" aria-hidden="true"></span>
+            <span>Blindar</span>
+          </span>
+          <span class="legend-item">
+            <span class="legend-dot" style="background: #2E7D32;" aria-hidden="true"></span>
+            <span>Incentivar</span>
+          </span>
+          <span class="legend-item">
+            <span class="legend-dot" style="background: #F57C00;" aria-hidden="true"></span>
+            <span>Avaliar</span>
+          </span>
+          <span class="legend-item">
+            <span class="legend-dot" style="background: #C62828;" aria-hidden="true"></span>
+            <span>Conquistar</span>
+          </span>
+        </div>
+      </nav>
+    </header>
+
+    <!-- Main content area -->
+    <main id="main-content" role="main">
+      
+      <!-- KPI Summary Section -->
+      <section class="kpi-summary" role="region" aria-labelledby="kpi-heading">
+        <h2 id="kpi-heading" class="sr-only">Indicadores Principais de Performance</h2>
+        
+        <article class="kpi-card" role="group" aria-labelledby="total-medicos">
+          <h3 id="total-medicos" class="kpi-label">Total de Médicos</h3>
+          <div class="kpi-value" aria-describedby="total-medicos-desc">1,247</div>
+          <p id="total-medicos-desc" class="kpi-sub">Ativos na base</p>
+        </article>
+        
+        <article class="kpi-card" role="group" aria-labelledby="segmentados">
+          <h3 id="segmentados" class="kpi-label">Segmentados</h3>
+          <div class="kpi-value" aria-describedby="segmentados-desc">1,089</div>
+          <p id="segmentados-desc" class="kpi-sub">87.3% da base</p>
+        </article>
+        
+        <article class="kpi-card" role="group" aria-labelledby="receita-potencial">
+          <h3 id="receita-potencial" class="kpi-label">Receita Potencial</h3>
+          <div class="kpi-value" aria-describedby="receita-desc">R$ 2.8M</div>
+          <p id="receita-desc" class="kpi-sub">Estimativa anual</p>
+        </article>
+        
+        <article class="kpi-card" role="group" aria-labelledby="oportunidades">
+          <h3 id="oportunidades" class="kpi-label">Oportunidades</h3>
+          <div class="kpi-value" aria-describedby="oportunidades-desc">342</div>
+          <p id="oportunidades-desc" class="kpi-sub">Médicos prioritários</p>
+        </article>
+      </section>
+
+      <!-- Dashboard Grid -->
+      <section class="dashboard-grid" role="region" aria-labelledby="matriz-heading">
+        <h2 id="matriz-heading" class="sr-only">Matriz de Segmentação por Quadrantes</h2>
+
+        <!-- Quadrant 1: Blindar -->
+        <article class="dashboard-card" role="group" aria-labelledby="q1-title">
+          <header class="card-header">
+            <div class="segment-title">
+              <h3 id="q1-title" class="quadrant-id">Q1 - ALTO VOLUME / ALTA AFINIDADE</h3>
+              <span class="segment-badge segment-badge--blindar" aria-label="Estratégia: Blindar">Blindar</span>
+            </div>
+            <p class="card-metrics">Médicos estratégicos com alto volume e forte relacionamento</p>
+          </header>
+          
+          <div class="card-body" role="region" aria-labelledby="q1-title">
+            <ul class="medical-list" aria-label="Lista de médicos do quadrante Blindar">
+              <li>Dr. João Silva - Cardiologia</li>
+              <li>Dra. Maria Santos - Neurologia</li>
+              <li>Dr. Pedro Oliveira - Ortopedia</li>
+              <li>Dra. Ana Costa - Ginecologia</li>
+              <li>Dr. Carlos Ferreira - Urologia</li>
+              <li>Dra. Lucia Pereira - Dermatologia</li>
+              <li>Dr. Ricardo Alves - Gastroenterologia</li>
+              <li>Dra. Patricia Lima - Endocrinologia</li>
+              <li>Dr. Fernando Rocha - Pneumologia</li>
+              <li>Dra. Claudia Martins - Reumatologia</li>
+            </ul>
+          </div>
+          
+          <footer class="card-footer" aria-label="Total de médicos no quadrante">
+            72 médicos neste segmento
+          </footer>
+        </article>
+
+        <!-- Quadrant 2: Incentivar -->
+        <article class="dashboard-card" role="group" aria-labelledby="q2-title">
+          <header class="card-header">
+            <div class="segment-title">
+              <h3 id="q2-title" class="quadrant-id">Q2 - BAIXO VOLUME / ALTA AFINIDADE</h3>
+              <span class="segment-badge segment-badge--incentivar" aria-label="Estratégia: Incentivar">Incentivar</span>
+            </div>
+            <p class="card-metrics">Médicos com bom relacionamento, potencial para crescimento</p>
+          </header>
+          
+          <div class="card-body" role="region" aria-labelledby="q2-title">
+            <ul class="medical-list" aria-label="Lista de médicos do quadrante Incentivar">
+              <li>Dr. André Ribeiro - Oncologia</li>
+              <li>Dra. Beatriz Gomes - Pediatria</li>
+              <li>Dr. Gabriel Torres - Psiquiatria</li>
+              <li>Dra. Helena Barbosa - Oftalmologia</li>
+              <li>Dr. Igor Nascimento - Nefrologia</li>
+              <li>Dra. Julia Melo - Infectologia</li>
+              <li>Dr. Leonardo Castro - Hematologia</li>
+              <li>Dra. Monica Dias - Geriatria</li>
+              <li>Dr. Nicolas Araujo - Anestesiologia</li>
+              <li>Dra. Olivia Cunha - Medicina do Trabalho</li>
+              <li>Dr. Paulo Machado - Radiologia</li>
+              <li>Dra. Quinta Morais - Patologia</li>
+            </ul>
+          </div>
+          
+          <footer class="card-footer" aria-label="Total de médicos no quadrante">
+            156 médicos neste segmento
+          </footer>
+        </article>
+
+        <!-- Quadrant 3: Avaliar -->
+        <article class="dashboard-card" role="group" aria-labelledby="q3-title">
+          <header class="card-header">
+            <div class="segment-title">
+              <h3 id="q3-title" class="quadrant-id">Q3 - ALTO VOLUME / BAIXA AFINIDADE</h3>
+              <span class="segment-badge segment-badge--avaliar" aria-label="Estratégia: Avaliar">Avaliar</span>
+            </div>
+            <p class="card-metrics">Médicos com volume alto mas relacionamento a melhorar</p>
+          </header>
+          
+          <div class="card-body" role="region" aria-labelledby="q3-title">
+            <ul class="medical-list" aria-label="Lista de médicos do quadrante Avaliar">
+              <li>Dr. Roberto Silva - Cirurgia Geral</li>
+              <li>Dra. Sandra Lopes - Medicina Interna</li>
+              <li>Dr. Thiago Ramos - Cirurgia Vascular</li>
+              <li>Dra. Ursula Freitas - Medicina Nuclear</li>
+              <li>Dr. Victor Hugo - Neurocirurgia</li>
+              <li>Dra. Wanda Souza - Cirurgia Plástica</li>
+              <li>Dr. Xavier Cardoso - Medicina Esportiva</li>
+              <li>Dra. Yara Mendes - Medicina Legal</li>
+              <li>Dr. Zeca Amaral - Proctologia</li>
+              <li>Dra. Amanda Reis - Mastologia</li>
+              <li>Dr. Bruno Teixeira - Medicina Intensiva</li>
+              <li>Dra. Carla Veloso - Medicina Preventiva</li>
+              <li>Dr. Daniel Moura - Cirurgia Torácica</li>
+              <li>Dra. Eliana Costa - Medicina de Família</li>
+            </ul>
+          </div>
+          
+          <footer class="card-footer" aria-label="Total de médicos no quadrante">
+            198 médicos neste segmento
+          </footer>
+        </article>
+
+        <!-- Quadrant 4: Conquistar -->
+        <article class="dashboard-card" role="group" aria-labelledby="q4-title">
+          <header class="card-header">
+            <div class="segment-title">
+              <h3 id="q4-title" class="quadrant-id">Q4 - BAIXO VOLUME / BAIXA AFINIDADE</h3>
+              <span class="segment-badge segment-badge--conquistar" aria-label="Estratégia: Conquistar">Conquistar</span>
+            </div>
+            <p class="card-metrics">Médicos com potencial de desenvolvimento completo</p>
+          </header>
+          
+          <div class="card-body" role="region" aria-labelledby="q4-title">
+            <ul class="medical-list" aria-label="Lista de médicos do quadrante Conquistar">
+              <li>Dr. Felipe Santos - Medicina do Sono</li>
+              <li>Dra. Gabriela Lima - Medicina Fetal</li>
+              <li>Dr. Henrique Alves - Cirurgia de Cabeça e Pescoço</li>
+              <li>Dra. Isabela Rocha - Medicina Reprodutiva</li>
+              <li>Dr. Joaquim Pires - Medicina Hiperbárica</li>
+              <li>Dra. Kelly Nunes - Medicina Estética</li>
+              <li>Dr. Lucas Martins - Medicina de Urgência</li>
+              <li>Dra. Mariana Silva - Medicina Paliativa</li>
+              <li>Dr. Nathan Costa - Medicina Genômica</li>
+              <li>Dra. Olga Ferreira - Medicina Integrativa</li>
+              <li>Dr. Pablo Oliveira - Telemedicina</li>
+              <li>Dra. Regina Barbosa - Medicina Personalizada</li>
+              <li>Dr. Sergio Torres - Medicina Regenerativa</li>
+              <li>Dra. Tatiana Gomes - Medicina de Precisão</li>
+              <li>Dr. Ulisses Dias - Medicina Digital</li>
+              <li>Dra. Vanessa Cunha - Medicina 4.0</li>
+            </ul>
+          </div>
+          
+          <footer class="card-footer" aria-label="Total de médicos no quadrante">
+            289 médicos neste segmento
+          </footer>
+        </article>
+
+      </section>
+    </main>
+
+    <!-- Dashboard Footer -->
+    <footer class="dashboard-footer" role="contentinfo">
+      <p class="sr-only">Fim do dashboard MECOBE</p>
+    </footer>
+
+  </div>
+
+  <!-- Scripts -->
+  <script src="dashboard.js" defer></script>
+  
+  <!-- Accessibility enhancements -->
+  <script>
+    // Remove loading screen when page is ready
+    document.addEventListener('DOMContentLoaded', function() {
+      setTimeout(function() {
+        const loadingScreen = document.getElementById('loading-screen');
+        if (loadingScreen) {
+          loadingScreen.classList.add('hidden');
+          setTimeout(() => loadingScreen.remove(), 300);
+        }
+      }, 500);
+    });
+
+    // Enhanced keyboard navigation
+    document.addEventListener('keydown', function(e) {
+      // ESC key to close any open elements
+      if (e.key === 'Escape') {
+        document.activeElement.blur();
+      }
+      
+      // Ctrl+P for print
+      if (e.ctrlKey && e.key === 'p') {
+        e.preventDefault();
+        if (window.MecobeDashboard && window.MecobeDashboard.print) {
+          window.MecobeDashboard.print();
+        }
+      }
+    });
+
+    // Focus management for screen readers
+    window.addEventListener('load', function() {
+      // Announce page load to screen readers
+      const announcement = document.createElement('div');
+      announcement.setAttribute('aria-live', 'polite');
+      announcement.setAttribute('aria-atomic', 'true');
+      announcement.className = 'sr-only';
+      announcement.textContent = 'Dashboard MECOBE carregado com sucesso. Use Tab para navegar pelos elementos.';
+      document.body.appendChild(announcement);
+      
+      setTimeout(() => announcement.remove(), 3000);
+    });
+
+    // Error boundary for JavaScript
+    window.addEventListener('error', function(e) {
+      console.error('Dashboard error:', e.error);
+      
+      // Show user-friendly error message
+      const errorMsg = document.createElement('div');
+      errorMsg.style.cssText = `
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #dc3545;
+        color: white;
+        padding: 12px 20px;
+        border-radius: 8px;
+        z-index: 10001;
+        font-family: inherit;
+      `;
+      errorMsg.textContent = 'Ocorreu um erro no dashboard. Recarregue a página se necessário.';
+      document.body.appendChild(errorMsg);
+      
+      setTimeout(() => errorMsg.remove(), 5000);
+    });
+  </script>
+
+  <!-- Performance monitoring -->
+  <script>
+    // Basic performance monitoring
+    window.addEventListener('load', function() {
+      if ('performance' in window) {
+        const loadTime = performance.timing.loadEventEnd - performance.timing.navigationStart;
+        console.log(`Dashboard load time: ${loadTime}ms`);
+        
+        // Log to analytics if available
+        if (window.gtag) {
+          gtag('event', 'page_load_time', {
+            value: Math.round(loadTime),
+            custom_parameter: 'mecobe_dashboard'
+          });
+        }
+      }
+    });
+  </script>
+
+</body>
+</html>
