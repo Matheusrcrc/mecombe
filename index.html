@@ -82,6 +82,24 @@
       </div>
       
       <nav class="controls" role="navigation" aria-label="Controles do dashboard">
+        <!-- Filters Toggle Button -->
+        <button 
+          id="filters-toggle" 
+          class="filters-toggle-btn" 
+          type="button" 
+          aria-expanded="false"
+          aria-controls="filters-panel"
+          aria-label="Expandir filtros"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polygon points="22,3 2,3 10,12.46 10,19 14,21 14,12.46 22,3"/>
+          </svg>
+          <span>Filtros</span>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="6,9 12,15 18,9"/>
+          </svg>
+        </button>
+
         <div class="legend" role="group" aria-label="Legenda de cores">
           <span class="legend-item">
             <span class="legend-dot" style="background: #0B6E99;" aria-hidden="true"></span>
@@ -102,6 +120,280 @@
         </div>
       </nav>
     </header>
+
+    <!-- Advanced Filters Panel -->
+    <section 
+      id="filters-panel" 
+      class="filters-panel" 
+      role="region" 
+      aria-labelledby="filters-heading"
+      aria-hidden="true"
+    >
+      <div class="filters-container">
+        <header class="filters-header">
+          <h2 id="filters-heading" class="filters-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polygon points="22,3 2,3 10,12.46 10,19 14,21 14,12.46 22,3"/>
+            </svg>
+            Filtros Avançados
+          </h2>
+          <div class="filters-actions">
+            <button type="button" class="filter-btn filter-btn--secondary" id="reload-data" aria-label="Recarregar dados da planilha" title="Recarregar dados da planilha Excel">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="23,4 23,10 17,10"/>
+                <polyline points="1,20 1,14 7,14"/>
+                <path d="M20.49,9A9,9,0,0,0,5.64,5.64L1,10M3.51,15a9,9,0,0,0,14.85,4.36L23,14"/>
+              </svg>
+              Recarregar
+            </button>
+            <button type="button" class="filter-btn filter-btn--secondary" id="clear-filters" aria-label="Limpar todos os filtros">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M3 6h18l-2 13H5L3 6z"/>
+                <path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+              </svg>
+              Limpar
+            </button>
+            <div class="active-filters-count" id="active-filters-count" aria-live="polite">
+              <span class="sr-only">Filtros ativos:</span>
+              <span class="count">0</span>
+            </div>
+          </div>
+        </header>
+
+        <div class="filters-content">
+          <!-- Search Filter -->
+          <div class="filter-group">
+            <label for="search-input" class="filter-label">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="8"/>
+                <path d="M21 21l-4.35-4.35"/>
+              </svg>
+              Buscar Médico
+            </label>
+            <div class="search-wrapper">
+              <input
+                type="search"
+                id="search-input"
+                class="filter-input search-input"
+                placeholder="Digite o nome do médico..."
+                autocomplete="off"
+                aria-describedby="search-help"
+              />
+              <button type="button" class="search-clear" id="search-clear" aria-label="Limpar busca" tabindex="-1">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+            <div id="search-help" class="filter-help">Busque por nome ou sobrenome</div>
+          </div>
+
+          <!-- Segment Filter -->
+          <div class="filter-group">
+            <fieldset class="filter-fieldset">
+              <legend class="filter-label">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <rect x="3" y="3" width="7" height="7"/>
+                  <rect x="14" y="3" width="7" height="7"/>
+                  <rect x="14" y="14" width="7" height="7"/>
+                  <rect x="3" y="14" width="7" height="7"/>
+                </svg>
+                Segmentos
+              </legend>
+              <div class="checkbox-group">
+                <label class="checkbox-label">
+                  <input type="checkbox" class="segment-filter" value="blindar" id="segment-blindar" />
+                  <span class="checkbox-custom"></span>
+                  <span class="checkbox-text">
+                    <span class="segment-badge segment-badge--blindar">Blindar</span>
+                    <span class="segment-desc">Alto Volume / Alta Afinidade</span>
+                  </span>
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" class="segment-filter" value="incentivar" id="segment-incentivar" />
+                  <span class="checkbox-custom"></span>
+                  <span class="checkbox-text">
+                    <span class="segment-badge segment-badge--incentivar">Incentivar</span>
+                    <span class="segment-desc">Baixo Volume / Alta Afinidade</span>
+                  </span>
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" class="segment-filter" value="avaliar" id="segment-avaliar" />
+                  <span class="checkbox-custom"></span>
+                  <span class="checkbox-text">
+                    <span class="segment-badge segment-badge--avaliar">Avaliar</span>
+                    <span class="segment-desc">Alto Volume / Baixa Afinidade</span>
+                  </span>
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" class="segment-filter" value="conquistar" id="segment-conquistar" />
+                  <span class="checkbox-custom"></span>
+                  <span class="checkbox-text">
+                    <span class="segment-badge segment-badge--conquistar">Conquistar</span>
+                    <span class="segment-desc">Baixo Volume / Baixa Afinidade</span>
+                  </span>
+                </label>
+              </div>
+            </fieldset>
+          </div>
+
+          <!-- Specialty Filter -->
+          <div class="filter-group">
+            <label for="specialty-select" class="filter-label">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M9 11H1v3h8v3l3-3.5L9 11z"/>
+                <path d="M22 12h-7"/>
+                <path d="M22 6h-7"/>
+                <path d="M22 18h-7"/>
+              </svg>
+              Especialidade Médica
+            </label>
+            <div class="select-wrapper">
+              <select id="specialty-select" class="filter-select" aria-describedby="specialty-help">
+                <option value="">Todas as especialidades</option>
+                <option value="cardiologia">Cardiologia</option>
+                <option value="neurologia">Neurologia</option>
+                <option value="ortopedia">Ortopedia</option>
+                <option value="ginecologia">Ginecologia</option>
+                <option value="urologia">Urologia</option>
+                <option value="dermatologia">Dermatologia</option>
+                <option value="gastroenterologia">Gastroenterologia</option>
+                <option value="endocrinologia">Endocrinologia</option>
+                <option value="pneumologia">Pneumologia</option>
+                <option value="reumatologia">Reumatologia</option>
+                <option value="oncologia">Oncologia</option>
+                <option value="pediatria">Pediatria</option>
+                <option value="psiquiatria">Psiquiatria</option>
+                <option value="oftalmologia">Oftalmologia</option>
+                <option value="nefrologia">Nefrologia</option>
+                <option value="infectologia">Infectologia</option>
+                <option value="hematologia">Hematologia</option>
+                <option value="geriatria">Geriatria</option>
+                <option value="anestesiologia">Anestesiologia</option>
+                <option value="radiologia">Radiologia</option>
+                <option value="patologia">Patologia</option>
+                <option value="cirurgia-geral">Cirurgia Geral</option>
+                <option value="medicina-interna">Medicina Interna</option>
+                <option value="outras">Outras Especialidades</option>
+              </select>
+            </div>
+            <div id="specialty-help" class="filter-help">Filtre por especialidade médica</div>
+          </div>
+
+          <!-- Volume/Affinity Ranges -->
+          <div class="filter-group">
+            <fieldset class="filter-fieldset">
+              <legend class="filter-label">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <line x1="18" y1="20" x2="18" y2="10"/>
+                  <line x1="12" y1="20" x2="12" y2="4"/>
+                  <line x1="6" y1="20" x2="6" y2="14"/>
+                </svg>
+                Volume e Afinidade
+              </legend>
+              
+              <div class="range-group">
+                <div class="range-item">
+                  <label for="volume-range" class="range-label">Volume</label>
+                  <div class="range-wrapper">
+                    <input 
+                      type="range" 
+                      id="volume-range" 
+                      class="range-input" 
+                      min="0" 
+                      max="100" 
+                      value="50"
+                      aria-describedby="volume-value"
+                    />
+                    <div class="range-track"></div>
+                    <div class="range-labels">
+                      <span>Baixo</span>
+                      <span id="volume-value" class="range-value">50%</span>
+                      <span>Alto</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="range-item">
+                  <label for="affinity-range" class="range-label">Afinidade</label>
+                  <div class="range-wrapper">
+                    <input 
+                      type="range" 
+                      id="affinity-range" 
+                      class="range-input" 
+                      min="0" 
+                      max="100" 
+                      value="50"
+                      aria-describedby="affinity-value"
+                    />
+                    <div class="range-track"></div>
+                    <div class="range-labels">
+                      <span>Baixa</span>
+                      <span id="affinity-value" class="range-value">50%</span>
+                      <span>Alta</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </fieldset>
+          </div>
+
+          <!-- Quick Filters -->
+          <div class="filter-group">
+            <fieldset class="filter-fieldset">
+              <legend class="filter-label">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polygon points="13,2 3,14 12,14 11,22 21,10 12,10 13,2"/>
+                </svg>
+                Filtros Rápidos
+              </legend>
+              <div class="quick-filters">
+                <button type="button" class="quick-filter-btn" data-filter="high-priority">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polygon points="13,2 3,14 12,14 11,22 21,10 12,10 13,2"/>
+                  </svg>
+                  Alta Prioridade
+                </button>
+                <button type="button" class="quick-filter-btn" data-filter="new-opportunities">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="16"/>
+                    <line x1="8" y1="12" x2="16" y2="12"/>
+                  </svg>
+                  Novas Oportunidades
+                </button>
+                <button type="button" class="quick-filter-btn" data-filter="strategic">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polygon points="12,2 22,8.5 22,15.5 12,22 2,15.5 2,8.5 12,2"/>
+                    <line x1="12" y1="22" x2="12" y2="15.5"/>
+                    <polyline points="22,8.5 12,15.5 2,8.5"/>
+                  </svg>
+                  Estratégicos
+                </button>
+              </div>
+            </fieldset>
+          </div>
+        </div>
+
+        <!-- Filter Results Summary -->
+        <div class="filters-summary" id="filters-summary" aria-live="polite">
+          <div class="summary-content">
+            <span class="summary-text">Mostrando todos os médicos</span>
+            <span class="summary-count" id="filtered-count">1,247</span>
+          </div>
+          <div class="data-status" id="data-status">
+            <div class="status-indicator">
+              <span class="status-dot" id="status-dot"></span>
+              <span class="status-text" id="status-text">Carregando dados...</span>
+            </div>
+            <div class="status-details" id="status-details">
+              Fonte: Planilha Excel
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
 
     <!-- Main content area -->
     <main id="main-content" role="main">
@@ -281,7 +573,11 @@
 
   </div>
 
+  <!-- External Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  
   <!-- Scripts -->
+  <script src="excel-loader.js" defer></script>
   <script src="dashboard.js" defer></script>
   
   <!-- Accessibility enhancements -->

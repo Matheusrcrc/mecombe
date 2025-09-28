@@ -83,6 +83,604 @@ const MecobeDashboard = (function() {
     }
   };
 
+  // Medical data structure for filtering
+  const medicalData = {
+    doctors: [], // Will be populated from Excel
+    isLoaded: false,
+    
+    async loadFromExcel() {
+      try {
+        utils.log('Carregando dados da planilha Excel...');
+        
+        if (typeof ExcelLoader === 'undefined') {
+          throw new Error('ExcelLoader não encontrado');
+        }
+        
+        const loadedDoctors = await ExcelLoader.loadData();
+        
+        if (loadedDoctors && loadedDoctors.length > 0) {
+          this.doctors = loadedDoctors;
+          this.isLoaded = true;
+          utils.log(`${loadedDoctors.length} médicos carregados da planilha`);
+          
+          // Trigger data refresh in UI
+          if (typeof filtersModule !== 'undefined' && filtersModule.applyFilters) {
+            setTimeout(() => {
+              filtersModule.applyFilters();
+            }, 100);
+          }
+        } else {
+          throw new Error('Nenhum dado encontrado na planilha');
+        }
+        
+        return this.doctors;
+        
+      } catch (error) {
+        utils.log(`Erro ao carregar planilha: ${error.message}`, 'error');
+        
+        // Load fallback data
+        this.doctors = this.getFallbackData();
+        this.isLoaded = true;
+        utils.log('Usando dados de fallback');
+        
+        return this.doctors;
+      }
+    },
+    
+    getFallbackData() {
+      return [
+        // Q1 - Blindar
+        { id: 1, name: 'Dr. João Silva', specialty: 'cardiologia', segment: 'blindar', volume: 85, affinity: 90, priority: 'high' },
+        { id: 2, name: 'Dra. Maria Santos', specialty: 'neurologia', segment: 'blindar', volume: 82, affinity: 88, priority: 'high' },
+        { id: 3, name: 'Dr. Pedro Oliveira', specialty: 'ortopedia', segment: 'blindar', volume: 79, affinity: 85, priority: 'high' },
+        { id: 4, name: 'Dra. Ana Costa', specialty: 'ginecologia', segment: 'blindar', volume: 87, affinity: 92, priority: 'strategic' },
+        { id: 5, name: 'Dr. Carlos Ferreira', specialty: 'urologia', segment: 'blindar', volume: 83, affinity: 89, priority: 'high' },
+        
+        // Q2 - Incentivar
+        { id: 11, name: 'Dr. André Ribeiro', specialty: 'oncologia', segment: 'incentivar', volume: 45, affinity: 88, priority: 'new-opportunities' },
+        { id: 12, name: 'Dra. Beatriz Gomes', specialty: 'pediatria', segment: 'incentivar', volume: 42, affinity: 85, priority: 'new-opportunities' },
+        { id: 13, name: 'Dr. Gabriel Torres', specialty: 'psiquiatria', segment: 'incentivar', volume: 48, affinity: 90, priority: 'high' },
+        
+        // Q3 - Avaliar  
+        { id: 21, name: 'Dr. Roberto Silva', specialty: 'cirurgia-geral', segment: 'avaliar', volume: 85, affinity: 45, priority: 'strategic' },
+        { id: 22, name: 'Dra. Sandra Lopes', specialty: 'medicina-interna', segment: 'avaliar', volume: 82, affinity: 42, priority: 'strategic' },
+        
+        // Q4 - Conquistar
+        { id: 26, name: 'Dr. Felipe Santos', specialty: 'outras', segment: 'conquistar', volume: 30, affinity: 35, priority: 'new-opportunities' },
+        { id: 27, name: 'Dra. Gabriela Lima', specialty: 'outras', segment: 'conquistar', volume: 32, affinity: 38, priority: 'new-opportunities' }
+      ];
+    },
+
+    getBySegment(segment) {
+      return this.doctors.filter(doctor => doctor.segment === segment);
+    },
+
+    getBySpecialty(specialty) {
+      return this.doctors.filter(doctor => doctor.specialty === specialty);
+    },
+
+    search(query) {
+      const searchTerm = query.toLowerCase();
+      return this.doctors.filter(doctor => 
+        doctor.name.toLowerCase().includes(searchTerm)
+      );
+    },
+
+    filterByPriority(priority) {
+      return this.doctors.filter(doctor => doctor.priority === priority);
+    },
+
+    filterByVolumeRange(min, max) {
+      return this.doctors.filter(doctor => 
+        doctor.volume >= min && doctor.volume <= max
+      );
+    },
+
+    filterByAffinityRange(min, max) {
+      return this.doctors.filter(doctor => 
+        doctor.affinity >= min && doctor.affinity <= max
+      );
+    }
+  };
+
+  // Filters module
+  const filtersModule = {
+    currentFilters: {
+      search: '',
+      segments: [],
+      specialty: '',
+      volume: { min: 0, max: 100 },
+      affinity: { min: 0, max: 100 },
+      quickFilters: []
+    },
+
+    isInitialized: false,
+
+    init() {
+      if (this.isInitialized) return;
+      
+      utils.log('Inicializando sistema de filtros...');
+      
+      this.bindEvents();
+      this.setupRangeSliders();
+      this.updateFilterCount();
+      
+      this.isInitialized = true;
+      utils.log('Sistema de filtros inicializado com sucesso');
+    },
+
+    bindEvents() {
+      // Filters toggle
+      const toggleBtn = utils.query('#filters-toggle');
+      const filtersPanel = utils.query('#filters-panel');
+      
+      if (toggleBtn && filtersPanel) {
+        toggleBtn.addEventListener('click', () => {
+          this.toggleFiltersPanel();
+        });
+      }
+
+      // Search input
+      const searchInput = utils.query('#search-input');
+      const searchClear = utils.query('#search-clear');
+      
+      if (searchInput) {
+        searchInput.addEventListener('input', utils.debounce((e) => {
+          this.updateSearchFilter(e.target.value);
+        }, 300));
+      }
+      
+      if (searchClear) {
+        searchClear.addEventListener('click', () => {
+          this.clearSearch();
+        });
+      }
+
+      // Segment checkboxes
+      const segmentFilters = utils.queryAll('.segment-filter');
+      segmentFilters.forEach(checkbox => {
+        checkbox.addEventListener('change', (e) => {
+          this.updateSegmentFilter(e.target.value, e.target.checked);
+        });
+      });
+
+      // Specialty select
+      const specialtySelect = utils.query('#specialty-select');
+      if (specialtySelect) {
+        specialtySelect.addEventListener('change', (e) => {
+          this.updateSpecialtyFilter(e.target.value);
+        });
+      }
+
+      // Quick filter buttons
+      const quickFilterBtns = utils.queryAll('.quick-filter-btn');
+      quickFilterBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          this.toggleQuickFilter(btn.dataset.filter, btn);
+        });
+      });
+
+      // Clear filters button
+      const clearBtn = utils.query('#clear-filters');
+      if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+          this.clearAllFilters();
+        });
+      }
+
+      // Reload data button
+      const reloadBtn = utils.query('#reload-data');
+      if (reloadBtn) {
+        reloadBtn.addEventListener('click', async () => {
+          await this.reloadData();
+        });
+      }
+
+      // Range sliders
+      const volumeRange = utils.query('#volume-range');
+      const affinityRange = utils.query('#affinity-range');
+      
+      if (volumeRange) {
+        volumeRange.addEventListener('input', (e) => {
+          this.updateVolumeRange(parseInt(e.target.value));
+        });
+      }
+      
+      if (affinityRange) {
+        affinityRange.addEventListener('input', (e) => {
+          this.updateAffinityRange(parseInt(e.target.value));
+        });
+      }
+    },
+
+    toggleFiltersPanel() {
+      const toggleBtn = utils.query('#filters-toggle');
+      const filtersPanel = utils.query('#filters-panel');
+      
+      if (!toggleBtn || !filtersPanel) return;
+      
+      const isExpanded = toggleBtn.getAttribute('aria-expanded') === 'true';
+      const newState = !isExpanded;
+      
+      toggleBtn.setAttribute('aria-expanded', newState);
+      filtersPanel.setAttribute('aria-hidden', !newState);
+      
+      utils.log(`Filtros ${newState ? 'expandidos' : 'recolhidos'}`);
+    },
+
+    updateSearchFilter(query) {
+      this.currentFilters.search = query.trim();
+      
+      const searchClear = utils.query('#search-clear');
+      if (searchClear) {
+        searchClear.style.opacity = query ? '1' : '0';
+      }
+      
+      this.applyFilters();
+      utils.log(`Busca atualizada: "${query}"`);
+    },
+
+    clearSearch() {
+      const searchInput = utils.query('#search-input');
+      if (searchInput) {
+        searchInput.value = '';
+        this.updateSearchFilter('');
+      }
+    },
+
+    updateSegmentFilter(segment, isChecked) {
+      if (isChecked) {
+        if (!this.currentFilters.segments.includes(segment)) {
+          this.currentFilters.segments.push(segment);
+        }
+      } else {
+        this.currentFilters.segments = this.currentFilters.segments.filter(s => s !== segment);
+      }
+      
+      this.applyFilters();
+      utils.log(`Filtro de segmento ${isChecked ? 'adicionado' : 'removido'}: ${segment}`);
+    },
+
+    updateSpecialtyFilter(specialty) {
+      this.currentFilters.specialty = specialty;
+      this.applyFilters();
+      utils.log(`Filtro de especialidade: ${specialty || 'todas'}`);
+    },
+
+    updateVolumeRange(value) {
+      // For simplicity, using single slider as minimum threshold
+      this.currentFilters.volume.min = value;
+      
+      const valueDisplay = utils.query('#volume-value');
+      if (valueDisplay) {
+        valueDisplay.textContent = `${value}%`;
+      }
+      
+      this.applyFilters();
+    },
+
+    updateAffinityRange(value) {
+      // For simplicity, using single slider as minimum threshold
+      this.currentFilters.affinity.min = value;
+      
+      const valueDisplay = utils.query('#affinity-value');
+      if (valueDisplay) {
+        valueDisplay.textContent = `${value}%`;
+      }
+      
+      this.applyFilters();
+    },
+
+    toggleQuickFilter(filterType, buttonElement) {
+      const isActive = buttonElement.classList.contains('active');
+      
+      if (isActive) {
+        buttonElement.classList.remove('active');
+        this.currentFilters.quickFilters = this.currentFilters.quickFilters.filter(f => f !== filterType);
+      } else {
+        buttonElement.classList.add('active');
+        if (!this.currentFilters.quickFilters.includes(filterType)) {
+          this.currentFilters.quickFilters.push(filterType);
+        }
+      }
+      
+      this.applyFilters();
+      utils.log(`Filtro rápido ${isActive ? 'removido' : 'adicionado'}: ${filterType}`);
+    },
+
+    applyFilters() {
+      let filteredDoctors = [...medicalData.doctors];
+      
+      // Apply search filter
+      if (this.currentFilters.search) {
+        filteredDoctors = filteredDoctors.filter(doctor =>
+          doctor.name.toLowerCase().includes(this.currentFilters.search.toLowerCase())
+        );
+      }
+      
+      // Apply segment filters
+      if (this.currentFilters.segments.length > 0) {
+        filteredDoctors = filteredDoctors.filter(doctor =>
+          this.currentFilters.segments.includes(doctor.segment)
+        );
+      }
+      
+      // Apply specialty filter
+      if (this.currentFilters.specialty) {
+        filteredDoctors = filteredDoctors.filter(doctor =>
+          doctor.specialty === this.currentFilters.specialty
+        );
+      }
+      
+      // Apply volume filter
+      filteredDoctors = filteredDoctors.filter(doctor =>
+        doctor.volume >= this.currentFilters.volume.min
+      );
+      
+      // Apply affinity filter
+      filteredDoctors = filteredDoctors.filter(doctor =>
+        doctor.affinity >= this.currentFilters.affinity.min
+      );
+      
+      // Apply quick filters
+      if (this.currentFilters.quickFilters.length > 0) {
+        filteredDoctors = filteredDoctors.filter(doctor =>
+          this.currentFilters.quickFilters.some(filter => doctor.priority === filter.replace('-', '_'))
+        );
+      }
+      
+      this.updateUI(filteredDoctors);
+      this.updateFilterCount();
+      this.updateResultsSummary(filteredDoctors);
+    },
+
+    updateUI(filteredDoctors) {
+      // Group doctors by segment
+      const segments = {
+        blindar: filteredDoctors.filter(d => d.segment === 'blindar'),
+        incentivar: filteredDoctors.filter(d => d.segment === 'incentivar'),
+        avaliar: filteredDoctors.filter(d => d.segment === 'avaliar'),
+        conquistar: filteredDoctors.filter(d => d.segment === 'conquistar')
+      };
+      
+      // Update each quadrant
+      Object.keys(segments).forEach(segment => {
+        this.updateQuadrant(segment, segments[segment]);
+      });
+      
+      // Update KPIs
+      this.updateKPIs(filteredDoctors);
+    },
+
+    updateQuadrant(segmentKey, doctors) {
+      const segmentMap = {
+        blindar: 'q1',
+        incentivar: 'q2', 
+        avaliar: 'q3',
+        conquistar: 'q4'
+      };
+      
+      const quadrantId = segmentMap[segmentKey];
+      const cardBody = utils.query(`[aria-labelledby="${quadrantId}-title"] .card-body`);
+      const cardFooter = utils.query(`[aria-labelledby="${quadrantId}-title"] .card-footer`);
+      
+      if (!cardBody || !cardFooter) return;
+      
+      if (doctors.length === 0) {
+        cardBody.innerHTML = '<div class="empty-state">Nenhum médico encontrado com os filtros aplicados</div>';
+        cardFooter.textContent = '0 médicos neste segmento';
+      } else {
+        const doctorsList = doctors.map(doctor => {
+          const specialtyText = this.getSpecialtyDisplayName(doctor.specialty);
+          return `<li data-doctor-id="${doctor.id}">${doctor.name} - ${specialtyText}</li>`;
+        }).join('');
+        
+        cardBody.innerHTML = `<ul class="medical-list" aria-label="Lista de médicos do quadrante ${segmentKey}">${doctorsList}</ul>`;
+        cardFooter.textContent = `${doctors.length} médicos neste segmento`;
+      }
+    },
+
+    updateKPIs(filteredDoctors) {
+      const totalMedicos = utils.query('.kpi-card:nth-child(1) .kpi-value');
+      const segmentados = utils.query('.kpi-card:nth-child(2) .kpi-value');
+      const oportunidades = utils.query('.kpi-card:nth-child(4) .kpi-value');
+      
+      if (totalMedicos) {
+        totalMedicos.textContent = filteredDoctors.length.toLocaleString();
+      }
+      
+      if (segmentados) {
+        const percentage = filteredDoctors.length > 0 ? 
+          ((filteredDoctors.length / medicalData.doctors.length) * 100).toFixed(1) : 0;
+        segmentados.textContent = filteredDoctors.length.toLocaleString();
+        
+        const segmentadosDesc = utils.query('.kpi-card:nth-child(2) .kpi-sub');
+        if (segmentadosDesc) {
+          segmentadosDesc.textContent = `${percentage}% da base total`;
+        }
+      }
+      
+      if (oportunidades) {
+        const highPriority = filteredDoctors.filter(d => 
+          d.priority === 'high' || d.priority === 'new-opportunities'
+        ).length;
+        oportunidades.textContent = highPriority.toLocaleString();
+      }
+    },
+
+    updateFilterCount() {
+      let activeCount = 0;
+      
+      // Count active filters
+      if (this.currentFilters.search) activeCount++;
+      activeCount += this.currentFilters.segments.length;
+      if (this.currentFilters.specialty) activeCount++;
+      if (this.currentFilters.volume.min > 0) activeCount++;
+      if (this.currentFilters.affinity.min > 0) activeCount++;
+      activeCount += this.currentFilters.quickFilters.length;
+      
+      const countElement = utils.query('#active-filters-count .count');
+      if (countElement) {
+        countElement.textContent = activeCount;
+      }
+    },
+
+    updateResultsSummary(filteredDoctors) {
+      const summaryText = utils.query('.summary-text');
+      const filteredCount = utils.query('#filtered-count');
+      
+      if (summaryText && filteredCount) {
+        const total = medicalData.doctors.length;
+        const filtered = filteredDoctors.length;
+        
+        if (filtered === total) {
+          summaryText.textContent = 'Mostrando todos os médicos';
+        } else {
+          summaryText.textContent = `Mostrando médicos filtrados`;
+        }
+        
+        filteredCount.textContent = filtered.toLocaleString();
+      }
+    },
+
+    clearAllFilters() {
+      // Reset all filters
+      this.currentFilters = {
+        search: '',
+        segments: [],
+        specialty: '',
+        volume: { min: 0, max: 100 },
+        affinity: { min: 0, max: 100 },
+        quickFilters: []
+      };
+      
+      // Reset UI elements
+      const searchInput = utils.query('#search-input');
+      if (searchInput) searchInput.value = '';
+      
+      const segmentFilters = utils.queryAll('.segment-filter');
+      segmentFilters.forEach(checkbox => checkbox.checked = false);
+      
+      const specialtySelect = utils.query('#specialty-select');
+      if (specialtySelect) specialtySelect.value = '';
+      
+      const volumeRange = utils.query('#volume-range');
+      const affinityRange = utils.query('#affinity-range');
+      if (volumeRange) {
+        volumeRange.value = 50;
+        this.updateVolumeRange(50);
+      }
+      if (affinityRange) {
+        affinityRange.value = 50;
+        this.updateAffinityRange(50);
+      }
+      
+      const quickFilterBtns = utils.queryAll('.quick-filter-btn');
+      quickFilterBtns.forEach(btn => btn.classList.remove('active'));
+      
+      // Apply filters (will show all doctors)
+      this.applyFilters();
+      
+      utils.log('Todos os filtros foram limpos');
+    },
+
+    setupRangeSliders() {
+      const volumeRange = utils.query('#volume-range');
+      const affinityRange = utils.query('#affinity-range');
+      
+      if (volumeRange) {
+        this.updateVolumeRange(parseInt(volumeRange.value));
+      }
+      
+      if (affinityRange) {
+        this.updateAffinityRange(parseInt(affinityRange.value));
+      }
+    },
+
+    getSpecialtyDisplayName(specialty) {
+      const specialtyMap = {
+        'cardiologia': 'Cardiologia',
+        'neurologia': 'Neurologia',
+        'ortopedia': 'Ortopedia',
+        'ginecologia': 'Ginecologia',
+        'urologia': 'Urologia',
+        'dermatologia': 'Dermatologia',
+        'gastroenterologia': 'Gastroenterologia',
+        'endocrinologia': 'Endocrinologia',
+        'pneumologia': 'Pneumologia',
+        'reumatologia': 'Reumatologia',
+        'oncologia': 'Oncologia',
+        'pediatria': 'Pediatria',
+        'psiquiatria': 'Psiquiatria',
+        'oftalmologia': 'Oftalmologia',
+        'nefrologia': 'Nefrologia',
+        'infectologia': 'Infectologia',
+        'hematologia': 'Hematologia',
+        'geriatria': 'Geriatria',
+        'anestesiologia': 'Anestesiologia',
+        'radiologia': 'Radiologia',
+        'patologia': 'Patologia',
+        'cirurgia-geral': 'Cirurgia Geral',
+        'medicina-interna': 'Medicina Interna',
+        'outras': 'Outras Especialidades'
+      };
+      
+      return specialtyMap[specialty] || specialty;
+    },
+
+    async reloadData() {
+      try {
+        utils.log('Recarregando dados da planilha...');
+        this.updateDataStatus('loading', 'Recarregando dados...');
+        
+        // Reload data from Excel
+        await medicalData.loadFromExcel();
+        
+        // Clear and reapply filters
+        this.clearAllFilters();
+        this.applyFilters();
+        
+        this.updateDataStatus('success', `${medicalData.doctors.length} médicos carregados`);
+        utils.log('Dados recarregados com sucesso');
+        
+      } catch (error) {
+        utils.log(`Erro ao recarregar dados: ${error.message}`, 'error');
+        this.updateDataStatus('error', 'Erro ao recarregar dados');
+      }
+    },
+
+    updateDataStatus(status, message) {
+      const statusDot = utils.query('#status-dot');
+      const statusText = utils.query('#status-text');
+      const statusDetails = utils.query('#status-details');
+      
+      if (statusDot) {
+        statusDot.className = `status-dot ${status}`;
+      }
+      
+      if (statusText) {
+        statusText.textContent = message;
+      }
+      
+      if (statusDetails) {
+        const timestamp = new Date().toLocaleTimeString('pt-BR');
+        switch (status) {
+          case 'loading':
+            statusDetails.textContent = 'Carregando planilha Excel...';
+            break;
+          case 'success':
+            statusDetails.textContent = `Dados atualizados às ${timestamp} - Fonte: Planilha Excel`;
+            break;
+          case 'error':
+            statusDetails.textContent = `Erro às ${timestamp} - Usando dados de fallback`;
+            break;
+          default:
+            statusDetails.textContent = 'Fonte: Planilha Excel';
+        }
+      }
+    }
+  };
+
   // Data collection module
   const dataCollector = {
     /**
@@ -645,10 +1243,30 @@ const MecobeDashboard = (function() {
       }
     },
 
-    setup() {
+    async setup() {
       try {
+        // Show loading indicator
+        this.showLoadingIndicator(true);
+        
+        // Load data from Excel first
+        filtersModule.updateDataStatus('loading', 'Carregando dados...');
+        await medicalData.loadFromExcel();
+        
+        // Initialize filters system
+        filtersModule.init();
+        
+        // Update status based on data load result
+        if (medicalData.isLoaded) {
+          filtersModule.updateDataStatus('success', `${medicalData.doctors.length} médicos carregados`);
+        } else {
+          filtersModule.updateDataStatus('error', 'Usando dados de fallback');
+        }
+        
         // Create print button
         const button = uiModule.createPrintButton();
+        
+        // Hide loading indicator
+        this.showLoadingIndicator(false);
         
         if (button) {
           utils.log('Dashboard inicializado com sucesso');
@@ -663,7 +1281,49 @@ const MecobeDashboard = (function() {
         
       } catch (error) {
         utils.log(`Erro na inicialização: ${error.message}`, 'error');
+        this.showLoadingIndicator(false);
+        this.showErrorMessage('Erro ao carregar dados. Usando dados de exemplo.');
       }
+    },
+
+    showLoadingIndicator(show) {
+      const loadingScreen = utils.query('#loading-screen');
+      if (loadingScreen) {
+        if (show) {
+          loadingScreen.classList.remove('hidden');
+          loadingScreen.setAttribute('aria-hidden', 'false');
+        } else {
+          loadingScreen.classList.add('hidden');
+          loadingScreen.setAttribute('aria-hidden', 'true');
+        }
+      }
+    },
+
+    showErrorMessage(message) {
+      // Create error notification
+      const errorDiv = document.createElement('div');
+      errorDiv.style.cssText = `
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #dc3545;
+        color: white;
+        padding: 12px 20px;
+        border-radius: 8px;
+        z-index: 10001;
+        font-family: inherit;
+        max-width: 400px;
+        text-align: center;
+      `;
+      errorDiv.textContent = message;
+      document.body.appendChild(errorDiv);
+      
+      setTimeout(() => {
+        if (errorDiv.parentNode) {
+          errorDiv.parentNode.removeChild(errorDiv);
+        }
+      }, 5000);
     },
 
     performSelfTest() {
@@ -690,15 +1350,39 @@ const MecobeDashboard = (function() {
     init: initModule.init.bind(initModule),
     print: printModule.executePrint.bind(printModule),
     collectData: dataCollector.collectData.bind(dataCollector),
+    
+    // Filters API
+    filters: {
+      search: filtersModule.updateSearchFilter.bind(filtersModule),
+      clearAll: filtersModule.clearAllFilters.bind(filtersModule),
+      toggleSegment: filtersModule.updateSegmentFilter.bind(filtersModule),
+      setSpecialty: filtersModule.updateSpecialtyFilter.bind(filtersModule),
+      setVolumeMin: filtersModule.updateVolumeRange.bind(filtersModule),
+      setAffinityMin: filtersModule.updateAffinityRange.bind(filtersModule),
+      getCurrentFilters: () => filtersModule.currentFilters,
+      apply: filtersModule.applyFilters.bind(filtersModule)
+    },
+    
+    // Data API
+    data: {
+      getAllDoctors: () => medicalData.doctors,
+      getBySegment: medicalData.getBySegment.bind(medicalData),
+      getBySpecialty: medicalData.getBySpecialty.bind(medicalData),
+      search: medicalData.search.bind(medicalData),
+      filterByPriority: medicalData.filterByPriority.bind(medicalData)
+    },
+    
     config: CONFIG,
-    version: '2.0.0',
+    version: '2.1.0',
     
     // Debug methods
     debug: {
       utils,
       dataCollector,
       printModule,
-      uiModule
+      uiModule,
+      filtersModule,
+      medicalData
     }
   };
 })();
